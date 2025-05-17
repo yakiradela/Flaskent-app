@@ -38,13 +38,13 @@ jobs:
       # STEP 5: Terraform for 00-bootstrap (S3 + DynamoDB backend)
       ###############################################################
 
-      - name: Terraform Init - 00-boosttrap
+      - name: Terraform Init - 00-boostrap
         run: terraform init
-        working-directory: ./flask-app/infra/00-boosttrap
+        working-directory: ./flask-app/infra/00-boostrap
 
       - name: Terraform Apply - 00-bootstrap
         run: terraform apply -auto-approve
-        working-directory: ./flask-app/infra/00-boosttrap
+        working-directory: ./flask-app/infra/00-boostrap
 
       ###############################################################
       # STEP 6: Terraform for network (VPC, subnets)
@@ -59,7 +59,23 @@ jobs:
         working-directory: ./flask-app/infra/network
 
       ###############################################################
-      # STEP 7: Terraform for ECR (container registry)
+      # STEP 7: Terraform - App Infra (uses backend.tf, providers.tf, tfvars)
+      ###############################################################
+
+      - name: Terraform Init - app
+        run: terraform init -var-file=terraform.tfvars
+        working-directory: ./flask-app/infra
+
+      - name: Terraform Plan - app
+        run: terraform plan -var-file=terraform.tfvars
+        working-directory: ./flask-app/infra
+
+      - name: Terraform Apply - app
+        run: terraform apply -auto-approve -var-file=terraform.tfvars
+        working-directory: ./flask-app/infra
+
+      ###############################################################
+      # STEP 8: Terraform for ECR (container registry)
       ###############################################################
 
       - name: Terraform Init - ecr
@@ -71,7 +87,7 @@ jobs:
         working-directory: ./flask-app/infra/ecr
 
       ###############################################################
-      # STEP 8: Terraform for EKS (Kubernetes cluster)
+      # STEP 9: Terraform for EKS (Kubernetes cluster)
       ###############################################################
 
       - name: Terraform Init - eks
@@ -83,7 +99,7 @@ jobs:
         working-directory: ./flask-app/infra/eks
 
       ###############################################################
-      # STEP 9: Docker Build + Push to ECR
+      # STEP 10: Docker Build + Push to ECR
       ###############################################################
 
       - name: Set up Docker Buildx
@@ -103,7 +119,7 @@ jobs:
         run: docker push 557690607676.dkr.ecr.us-east-2.amazonaws.com/flask-app-repo:latest
 
       ###############################################################
-      # STEP 10: Install Helm (manually)
+      # STEP 11: Install Helm (manually)
       ###############################################################
 
       - name: Install Helm
@@ -111,7 +127,7 @@ jobs:
           curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
 
       ###############################################################
-      # STEP 11: Configure kubectl access to EKS
+      # STEP 12: Configure kubectl access to EKS
       ###############################################################
 
       - name: Configure kubectl to access EKS
@@ -119,7 +135,7 @@ jobs:
           aws eks --region us-east-2 update-kubeconfig --name flask-app-cluster
 
       ###############################################################
-      # STEP 12: Deploy Flask app to EKS using Helm
+      # STEP 13: Deploy Flask app to EKS using Helm
       ###############################################################
 
       - name: Deploy Flask app using Helm
