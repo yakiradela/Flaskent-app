@@ -1,1 +1,131 @@
+name: Deploy Flask App to AWS EKS
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout source code
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      # 2. Show current structure (debugging)
+      - name: Show current directory
+        run: |
+          pwd
+          ls -R
+
+      # 3. Set up Terraform
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v1
+        with:
+          terraform_version: "1.0.0"
+
+      # 4. Set up AWS credentials
+      - name: Set up AWS CLI
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: "us-east-2"
+
+      ###############################################################
+      # STEP 5: Terraform for 00-bootstrap (S3 + DynamoDB backend)
+      ###############################################################
+
+      - name: Terraform Init - 00-bootstrap
+        run: terraform init
+        working-directory: ./flask-app/infra/00-bootstrap
+
+      - name: Terraform Apply - 00-bootstrap
+        run: terraform apply -auto-approve
+        working-directory: ./flask-app/infra/00-bootstrap
+
+      ###############################################################
+      # STEP 6: Terraform for network (VPC, subnets)
+      ###############################################################
+
+      - name: Terraform Init - network
+        run: terraform init
+        working-directory: ./flask-app/infra/network
+
+      - name: Terraform Apply - network
+        run: terraform apply -auto-approve
+        working-directory: ./flask-app/infra/network
+
+      ###############################################################
+      # STEP 7: Terraform for ECR (container registry)
+      ###############################################################
+
+      - name: Terraform Init - ecr
+        run: terraform init
+        working-directory: ./flask-app/infra/ecr
+
+      - name: Terraform Apply - ecr
+        run: terraform apply -auto-approve
+        working-directory: ./flask-app/infra/ecr
+
+      ###############################################################
+      # STEP 8: Terraform for EKS (Kubernetes cluster)
+      ###############################################################
+
+      - name: Terraform Init - eks
+        run: terraform init
+        working-directory: ./flask-app/infra/eks
+
+      - name: Terraform Apply - eks
+        run: terraform apply -auto-approve
+        working-directory: ./flask-app/infra/eks
+
+      ###############################################################
+      # STEP 9: Docker Build + Push to ECR
+      ###############################################################
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Log in to Amazon ECR
+        run: |
+          aws ecr get-login-password --region us-east-2 | docker login --username AWS --password-stdin 557690607676.dkr.ecr.us-east-2.amazonaws.com
+
+      - name: Build Docker image
+        run: docker build -t flask-app ./flask-app/app
+
+      - name: Tag Docker image
+        run: docker tag flask-app:latest 557690607676.dkr.ecr.us-east-2.amazonaws.com/flask-app-repo:latest
+
+      - name: Push Docker image to ECR
+        run: docker push 557690607676.dkr.ecr.us-east-2.amazonaws.com/flask-app-repo:latest
+
+      ###############################################################
+      # STEP 10: Install Helm (manually)
+      ###############################################################
+
+      - name: Install Helm
+        run: |
+          curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+
+      ###############################################################
+      # STEP 11: Configure kubectl access to EKS
+      ###############################################################
+
+      - name: Configure kubectl to access EKS
+        run: |
+          aws eks --region us-east-2 update-kubeconfig --name flask-app-cluster
+
+      ###############################################################
+      # STEP 12: Deploy Flask app to EKS using Helm
+      ###############################################################
+
+      - name: Deploy Flask app using Helm
+        run: |
+          helm upgrade --install flask-app ./flask-app/helm/flask-app \
+            --set image.repository=557690607676.dkr.ecr.us-east-2.amazonaws.com/flask-app-repo \
+            --set image.tag=latest \
+            --namespace flask-app --create-namespace
 
