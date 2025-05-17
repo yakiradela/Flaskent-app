@@ -1,29 +1,9 @@
-# ========== S3 BUCKET FOR TERRAFORM STATE ==========
-resource "aws_s3_bucket" "tf_state" {
+# ========== S3 BUCKET (ALT - Avoid Duplicate Name) ==========
+resource "aws_s3_bucket" "tf_state_alt" {
   bucket = var.bucket_name
 
   tags = {
-    Name = "Terraform State Bucket"
-  }
-}
-
-# ========== ENABLE VERSIONING ==========
-resource "aws_s3_bucket_versioning" "tf_state_versioning" {
-  bucket = aws_s3_bucket.tf_state.id
-
-  versioning_configuration {
-    status = "Enabled"
-  }
-}
-
-# ========== ENABLE ENCRYPTION ==========
-resource "aws_s3_bucket_server_side_encryption_configuration" "sse" {
-  bucket = aws_s3_bucket.tf_state.id
-
-  rule {
-    apply_server_side_encryption_by_default {
-      sse_algorithm = "AES256"
-    }
+    Name = "Terraform State Bucket (Alt)"
   }
 }
 
@@ -73,29 +53,6 @@ resource "aws_iam_policy" "s3_access_policy" {
   })
 }
 
-# ========== IAM POLICY TO ALLOW DYNAMODB LOCKING ==========
-resource "aws_iam_policy" "dynamodb_lock_policy" {
-  name = "TerraformDynamoDBLockPolicy"
-
-  policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [
-      {
-        Effect = "Allow",
-        Action = [
-          "dynamodb:PutItem",
-          "dynamodb:GetItem",
-          "dynamodb:DeleteItem",
-          "dynamodb:Scan",
-          "dynamodb:Query",
-          "dynamodb:UpdateItem"
-        ],
-        Resource = "arn:aws:dynamodb:${var.region}:${data.aws_caller_identity.current.account_id}:table/${aws_dynamodb_table.tf_lock.name}"
-      }
-    ]
-  })
-}
-
 # ========== IAM ROLE ==========
 resource "aws_iam_role" "tf_role" {
   name = "TerraformExecutionRole"
@@ -112,16 +69,8 @@ resource "aws_iam_role" "tf_role" {
   })
 }
 
-# ========== ATTACH POLICIES TO ROLE ==========
+# ========== ATTACH POLICIES ==========
 resource "aws_iam_role_policy_attachment" "attach_s3_policy" {
   role       = aws_iam_role.tf_role.name
   policy_arn = aws_iam_policy.s3_access_policy.arn
 }
-
-resource "aws_iam_role_policy_attachment" "attach_dynamodb_policy" {
-  role       = aws_iam_role.tf_role.name
-  policy_arn = aws_iam_policy.dynamodb_lock_policy.arn
-}
-
-# ========== GET ACCOUNT ID ==========
-data "aws_caller_identity" "current" {}
