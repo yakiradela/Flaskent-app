@@ -28,10 +28,10 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: "us-east-2"
 
-      # 4. Run Terraform to provision infrastructure (S3, ECR, EKS, IAM roles)
+      # 4. Run Terraform to provision infrastructure (S3)
       - name: Terraform Init
         run: terraform init
-        working-directory: ./Flasent-app/flask-app/infra/00-bootstrap
+        working-directory: ./flask-app/infra/00-bootstrap
 
       - name: Terraform Apply
         run: terraform apply -auto-approve
