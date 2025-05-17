@@ -59,7 +59,7 @@ jobs:
 
       # 6. Set up Helm
       - name: Set up Helm
-        uses: helm/actions/setup-helm@v1
+        uses: helm/helm-action@v2
 
       # 7. Configure kubectl to access EKS
       - name: Configure kubectl to access EKS
