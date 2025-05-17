@@ -1,4 +1,4 @@
-name: Deploy Flask App to AWS EKS 
+name: Deploy Flask App to AWS EKS
 
 on:
   push:
@@ -57,9 +57,9 @@ jobs:
         run: |
           docker push 557690607676.dkr.ecr.us-east-2.amazonaws.com/flask-app-repo:latest
 
-      # 6. Set up Helm
+      # 6. Set up Helm (updated to v3)
       - name: Set up Helm
-        uses: helm/helm-action@v2
+        uses: helm/helm-action@v3
 
       # 7. Configure kubectl to access EKS
       - name: Configure kubectl to access EKS
