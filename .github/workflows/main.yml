@@ -38,13 +38,13 @@ jobs:
       # STEP 5: Terraform for 00-bootstrap (S3 + DynamoDB backend)
       ###############################################################
 
-      - name: Terraform Init - 00-bootstrap
+      - name: Terraform Init - 00-boottrap
         run: terraform init
-        working-directory: ./flask-app/infra/00-bootstrap
+        working-directory: ./flask-app/infra/00-boottrap
 
       - name: Terraform Apply - 00-bootstrap
         run: terraform apply -auto-approve
-        working-directory: ./flask-app/infra/00-bootstrap
+        working-directory: ./flask-app/infra/00-boottrap
 
       ###############################################################
       # STEP 6: Terraform for network (VPC, subnets)
