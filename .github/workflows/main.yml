@@ -24,8 +24,8 @@ jobs:
       - name: Set up AWS CLI
         uses: aws-actions/configure-aws-credentials@v1
         with:
-          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws_access_key_id: ${{ secrets.AWS-ACCESS-KEY-ID }}
+          aws_secret_access_key: ${{ secrets.AWS-SECRET-ACCESS-KEY }}
           aws_region: "us-east-2"
 
       # 4. Run Terraform to provision infrastructure (S3, ECR, EKS, IAM roles)
