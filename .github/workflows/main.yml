@@ -31,7 +31,7 @@ jobs:
       # 4. Run Terraform to provision infrastructure (S3, ECR, EKS, IAM roles)
       - name: Terraform Init
         run: terraform init
-        working-directory: .Flasent-app/flask-app/infra/00-bootstrap
+        working-directory: ./Flasent-app/flask-app/infra/00-bootstrap
 
       - name: Terraform Apply
         run: terraform apply -auto-approve
