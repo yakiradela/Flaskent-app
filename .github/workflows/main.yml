@@ -1,4 +1,4 @@
-name: Deploy Flask App to AWS EKS
+name: Deploy Flask App to AWS EKS 
 
 on:
   push:
