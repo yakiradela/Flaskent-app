@@ -1,3 +1,21 @@
+ ========== S3 BUCKET (ALT - Avoid Duplicate Name) ==========
+resource "aws_s3_bucket" "tf_state" {
+  bucket = var.bucket_name
+  force_destroy = true
+
+  versioning {
+    enabled = true
+  }
+
+  lifecycle {
+    prevent_destroy = true  # הוספת lifecycle על ה-S3 bucket
+  }
+
+  tags = {
+    Name = "Terraform State Bucket"
+  }
+}
+
 # ========== DYNAMODB TABLE FOR LOCKING ==========
 resource "aws_dynamodb_table" "tf_lock" {
   name         = "${var.bucket_name}-lock"
@@ -12,13 +30,11 @@ resource "aws_dynamodb_table" "tf_lock" {
   tags = {
     Name = "Terraform Lock Table"
   }
-}
 
-lifecycle {
-    prevent_destroy = true  # מוסיפים את ה-lifecycle כאן
+  lifecycle {
+    prevent_destroy = true  # הוספת lifecycle על DynamoDB
   }
 }
-
 
 # ========== IAM POLICY TO ALLOW S3 ACCESS ==========
 resource "aws_iam_policy" "s3_access_policy" {
@@ -50,11 +66,6 @@ resource "aws_iam_policy" "s3_access_policy" {
   })
 }
 
-lifecycle {
-    prevent_destroy = true  # מוסיפים את ה-lifecycle כאן
-  }
-}
-
 # ========== IAM ROLE ==========
 resource "aws_iam_role" "tf_role" {
   name = "TerraformExecutionRole"
@@ -70,18 +81,9 @@ resource "aws_iam_role" "tf_role" {
     }]
   })
 }
-lifecycle {
-    prevent_destroy = true  # מוסיפים את ה-lifecycle כאן
-  }
-}
-
 
 # ========== ATTACH POLICIES ==========
 resource "aws_iam_role_policy_attachment" "attach_s3_policy" {
   role       = aws_iam_role.tf_role.name
   policy_arn = aws_iam_policy.s3_access_policy.arn
-}
-lifecycle {
-    prevent_destroy = true  # מוסיפים את ה-lifecycle כאן
-  }
 }
