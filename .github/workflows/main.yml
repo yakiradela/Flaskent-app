@@ -59,9 +59,14 @@ jobs:
 
       # 6. Set up Helm
       - name: Set up Helm
-        uses: aws/setup-helm@v1
+        uses: helm/actions/setup-helm@v1
 
-      # 7. Deploy to EKS using Helm
+      # 7. Configure kubectl to access EKS
+      - name: Configure kubectl to access EKS
+        run: |
+          aws eks --region us-east-2 update-kubeconfig --name flask-app-cluster
+
+      # 8. Deploy Flask app to EKS using Helm
       - name: Deploy Flask app to EKS
         run: |
           helm upgrade --install flask-app ./flask-app/helm/flask-app \
