@@ -1,0 +1,70 @@
+name: Deploy Flask App to AWS EKS
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout the repository
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      # 2. Set up Terraform
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v1
+        with:
+          terraform_version: "1.0.0"
+
+      # 3. Set up AWS CLI
+      - name: Set up AWS CLI
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws_region: "us-east-2"
+
+      # 4. Run Terraform to provision infrastructure (S3, ECR, EKS, IAM roles)
+      - name: Terraform Init
+        run: terraform init
+        working-directory: ./flask-app/infra/00-bootstrap
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve
+        working-directory: ./flask-app/infra/00-bootstrap
+
+      # 5. Set up Docker and Build/Push the Docker image to ECR
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Log in to Amazon ECR
+        run: |
+          aws ecr get-login-password --region us-east-2 | docker login --username AWS --password-stdin 557690607676.dkr.ecr.us-east-2.amazonaws.com
+
+      - name: Build Docker image
+        run: |
+          docker build -t flask-app ./flask-app/app
+
+      - name: Tag Docker image
+        run: |
+          docker tag flask-app:latest 557690607676.dkr.ecr.us-east-2.amazonaws.com/flask-app-repo:latest
+
+      - name: Push Docker image to ECR
+        run: |
+          docker push 557690607676.dkr.ecr.us-east-2.amazonaws.com/flask-app-repo:latest
+
+      # 6. Set up Helm
+      - name: Set up Helm
+        uses: azure/setup-helm@v1
+
+      # 7. Deploy to EKS using Helm
+      - name: Deploy Flask app to EKS
+        run: |
+          helm upgrade --install flask-app ./flask-app/helm/flask-app \
+            --set image.repository=557690607676.dkr.ecr.us-east-2.amazonaws.com/flask-app-repo \
+            --set image.tag=latest \
+            --namespace flask-app --create-namespace
