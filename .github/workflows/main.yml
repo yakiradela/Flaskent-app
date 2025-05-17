@@ -40,7 +40,7 @@ jobs:
 
       - name: Terraform Init - 00-boosttrap
         run: terraform init
-        working-directory: ./flask-app/infra/00-boostrap
+        working-directory: ./flask-app/infra/00-boosttrap
 
       - name: Terraform Apply - 00-boosttrap
         run: terraform apply -auto-approve
