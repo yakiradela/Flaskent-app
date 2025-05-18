@@ -7,6 +7,7 @@ spec:
   selector:
     matchLabels:
       app: flask-app
+      namespace: {{ .Release.Namespace }}
   template:
     metadata:
       labels:
