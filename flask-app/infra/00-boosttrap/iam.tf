@@ -92,3 +92,23 @@ resource "aws_iam_role_policy_attachment" "attach_s3_policy" {
   role       = aws_iam_role.tf_role.name
   policy_arn = aws_iam_policy.s3_access_policy.arn
 }
+# ========== S3 BUCKET VERSIONING (הוספת הגדרת versioning בנפרד) ==========
+resource "aws_s3_bucket_versioning" "tf_state_versioning" {
+  bucket = aws_s3_bucket.tf_state_main.id
+
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+# ========== S3 BUCKET PUBLIC ACCESS BLOCK ==========
+resource "aws_s3_bucket_public_access_block" "block_public" {
+  bucket = aws_s3_bucket.tf_state_main.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+
