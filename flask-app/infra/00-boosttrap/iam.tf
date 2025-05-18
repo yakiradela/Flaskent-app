@@ -1,6 +1,24 @@
+# ========== S3 BUCKET (ALT - Avoid Duplicate Name) ==========
+resource "aws_s3_bucket" "tf_state" {
+  bucket = "terraform-state-${var.bucket_name}-${timestamp()}"
+  force_destroy = true
+
+  versioning {
+    enabled = true
+  }
+
+  lifecycle {
+    prevent_destroy = true  # הוספת lifecycle על ה-S3 bucket
+  }
+
+  tags = {
+    Name = "Terraform State Bucket"
+  }
+}
+
 # ========== DYNAMODB TABLE FOR LOCKING ==========
 resource "aws_dynamodb_table" "tf_lock" {
-  name         = "${var.bucket_name}-lock"
+  name         = "terraform-lock-${var.bucket_name}-${timestamp()}"
   billing_mode = "PAY_PER_REQUEST"
   hash_key     = "LockID"
 
@@ -20,7 +38,7 @@ resource "aws_dynamodb_table" "tf_lock" {
 
 # ========== IAM POLICY TO ALLOW S3 ACCESS ==========
 resource "aws_iam_policy" "s3_access_policy" {
-  name = "TerraformStateS3Policy"
+  name = "TerraformStateS3Policy-${timestamp()}"
 
   policy = jsonencode({
     Version = "2012-10-17",
@@ -50,7 +68,7 @@ resource "aws_iam_policy" "s3_access_policy" {
 
 # ========== IAM ROLE ==========
 resource "aws_iam_role" "tf_role" {
-  name = "TerraformExecutionRole"
+  name = "TerraformExecutionRole-${timestamp()}"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
