@@ -1,14 +1,10 @@
-# ========== S3 BUCKET (ALT - Avoid Duplicate Name) ==========
-resource "aws_s3_bucket" "tf_state" {
-  bucket = "terraform-state-${var.bucket_name}-${timestamp()}"
+# ========== S3 BUCKET (ALT - Avoid Duplicate Name) ========== 
+resource "aws_s3_bucket" "tf_state_main" {
+  bucket = "terraform-state-${var.bucket_name}"
   force_destroy = true
 
-  versioning {
-    enabled = true
-  }
-
   lifecycle {
-    prevent_destroy = true  # הוספת lifecycle על ה-S3 bucket
+    prevent_destroy = true
   }
 
   tags = {
@@ -16,9 +12,18 @@ resource "aws_s3_bucket" "tf_state" {
   }
 }
 
-# ========== DYNAMODB TABLE FOR LOCKING ==========
+# ========== S3 BUCKET VERSIONING (הוספת הגדרת versioning בנפרד) ==========
+resource "aws_s3_bucket_versioning" "tf_state_versioning" {
+  bucket = aws_s3_bucket.tf_state_main.id
+
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+# ========== DYNAMODB TABLE FOR LOCKING ========== 
 resource "aws_dynamodb_table" "tf_lock" {
-  name         = "terraform-lock-${var.bucket_name}-${timestamp()}"
+  name         = "terraform-lock-${var.bucket_name}"
   billing_mode = "PAY_PER_REQUEST"
   hash_key     = "LockID"
 
@@ -32,13 +37,13 @@ resource "aws_dynamodb_table" "tf_lock" {
   }
 
   lifecycle {
-    prevent_destroy = true  # הוספת lifecycle על DynamoDB
+    prevent_destroy = true
   }
 }
 
-# ========== IAM POLICY TO ALLOW S3 ACCESS ==========
+# ========== IAM POLICY TO ALLOW S3 ACCESS ========== 
 resource "aws_iam_policy" "s3_access_policy" {
-  name = "TerraformStateS3Policy-${timestamp()}"
+  name = "TerraformStateS3Policy"
 
   policy = jsonencode({
     Version = "2012-10-17",
@@ -58,17 +63,17 @@ resource "aws_iam_policy" "s3_access_policy" {
           "s3:ListBucket"
         ],
         Resource = [
-          "arn:aws:s3:::${var.bucket_name}",
-          "arn:aws:s3:::${var.bucket_name}/*"
+          "arn:aws:s3:::${aws_s3_bucket.tf_state_main.bucket}",
+          "arn:aws:s3:::${aws_s3_bucket.tf_state_main.bucket}/*"
         ]
       }
     ]
   })
 }
 
-# ========== IAM ROLE ==========
+# ========== IAM ROLE ========== 
 resource "aws_iam_role" "tf_role" {
-  name = "TerraformExecutionRole-${timestamp()}"
+  name = "TerraformExecutionRole"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
@@ -82,9 +87,8 @@ resource "aws_iam_role" "tf_role" {
   })
 }
 
-# ========== ATTACH POLICIES ==========
+# ========== ATTACH POLICIES ========== 
 resource "aws_iam_role_policy_attachment" "attach_s3_policy" {
   role       = aws_iam_role.tf_role.name
   policy_arn = aws_iam_policy.s3_access_policy.arn
 }
-
