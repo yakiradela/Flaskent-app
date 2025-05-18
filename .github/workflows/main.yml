@@ -132,7 +132,7 @@ jobs:
 
       - name: Configure kubectl to access EKS
         run: |
-          aws eks --region us-east-2 update-kubeconfig --name flask-app-cluster
+          aws eks --region us-east-2 update-kubeconfig --name eks-cluster
 
       ###############################################################
       # STEP 13: Deploy Flask app to EKS using Helm
