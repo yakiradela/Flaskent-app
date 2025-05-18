@@ -1,4 +1,4 @@
-resource "aws_s3_bucket" "tf_state" {
+resource "aws_s3_bucket" "tf_state_main" {
   bucket         = var.bucket_name
   force_destroy  = true
 
